@@ -14,6 +14,7 @@ let compare (a : t) (b : t) =
 let equal (a : t) (b : t) = compare a b = 0
 let hash (addr, seq) = Hashtbl.hash (addr, seq)
 let pp fmt (addr, seq) = Format.fprintf fmt "%a:%d" Byte8.pp addr seq
+let show = Format.asprintf "%a" pp
 
 let scan (ic : Scanf.Scanning.in_channel) : t =
   Scanf.bscanf ic "%r:%d" Byte8.scan (fun addr seq -> (addr, seq))

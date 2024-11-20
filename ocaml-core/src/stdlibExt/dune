@@ -20,6 +20,7 @@
   Float32
   Float64
   Float80
+  Int
   Int64
   Int32
   Option

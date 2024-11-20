@@ -153,3 +153,28 @@
   IOIR
   artifact)
  (modules cfgprinter))
+
+(executable
+ (ocamlopt_flags -O3 -inline-max-depth=5 -inline-max-unroll=2)
+ (flags -w -20-33-3 -open StdlibExt -open Notation)
+ (preprocess
+  (pps ppx_log ppx_cwd))
+ (name dafnyprinter)
+ (public_name multi-step-decomp)
+ (package multi-step-decomp)
+ (libraries
+  zarith
+  unix
+  stdlibExt
+  ppx_log
+  ppx_cwd
+  common
+  ILIR
+  world
+  FGIR_partial
+  FGIR
+  ASIR
+  IOIR
+  SIOIR
+  artifact)
+ (modules dafnyprinter))

@@ -4,11 +4,12 @@ type 'jmp_t poly_t_full = { jmp : 'jmp_t; loc : Loc.t; mnem : Mnemonic.t }
 module type S = sig
   type t
   type t_full
+  type itarget_t
 
   val pp : Format.formatter -> t -> unit
   val pp_full : Format.formatter -> t_full -> unit
-  val succ : t -> Loc.t List.t
-  val succ_full : t_full -> Loc.t List.t
+  val succ : t -> itarget_t List.t
+  val succ_full : t_full -> itarget_t List.t
   val is_ret : t -> bool
   val is_ret_full : t_full -> bool
   val resolve_calltarget_opt : t -> Loc.t option
@@ -33,6 +34,7 @@ end
 
 module Make (Jmp : JumpSig) = struct
   type t_full = Jmp.t poly_t_full [@@deriving sexp]
+  type itarget_t = Loc.t
 
   let pp_full (fmt : Format.formatter) (a : t_full) =
     Format.fprintf fmt "%a: %a [%a]" Loc.pp a.loc Jmp.pp a.jmp Mnemonic.pp

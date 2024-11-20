@@ -124,6 +124,7 @@ let sborrow (l : t) (r : t) (width : int32) : bool =
   scarry l (cut_width (Stdlib.Int64.neg r) width) width
 
 let pp fmt v = Format.fprintf fmt "%Lx" v
+let show = Format.asprintf "%a" pp
 let t_of_sexp = Sexplib.Conv.int64_of_sexp
 let sexp_of_t v = Sexplib.Conv.sexp_of_int64 v
 

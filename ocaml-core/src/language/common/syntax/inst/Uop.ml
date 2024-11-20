@@ -16,4 +16,4 @@ type t =
   | Uint2float
   | Ufloat2float
   | Utrunc
-[@@deriving sexp]
+[@@deriving sexp, show]

@@ -1,0 +1,25 @@
+(include_subdirs unqualified)
+
+(library
+ (name SIOIR)
+ (ocamlopt_flags -O3 -inline-max-depth=5 -inline-max-unroll=2)
+ (flags -w -20-33-3 -open StdlibExt -open Notation)
+ (preprocess
+  (pps ppx_log ppx_deriving.show ppx_sexp_conv ppx_fields_conv))
+ (libraries sexplib ppx_sexp_conv ocamlgraph stdlibExt ppx_log common IOIR)
+ (modules
+  JLabel
+  JLabelMap
+  JLabelSet
+  JIntra
+  ICall
+  ITailCall
+  IRet
+  Stmt
+  Node
+  Graph
+  Func
+  Prog
+  Translate
+  Restructure
+  DafnyPrinter))

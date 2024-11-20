@@ -24,7 +24,7 @@ let check_val (v1 : FGIR.Sem.Value.t) (v2 : ASIR.Sem.Value.t)
     (Unit.t, StopEvent.t) Result.t =
   match (v1, v2, v3) with
   | v, Num v', Num v'' ->
-      if NumericValue.subsume v v' && NumericValue.subsume v' v''  then Ok ()
+      if NumericValue.subsume v v' && NumericValue.subsume v' v'' then Ok ()
       else
         Error
           (FailStop
