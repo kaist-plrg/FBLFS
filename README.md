@@ -12,6 +12,8 @@ apt install curl make gcc unzip bubblewrap libffi-dev libgmp-dev pkg-config
 brew install libffi-dev gmp pkg-config
 ```
 
+Requires java 17 or higher.
+
 
 ## Build
 
