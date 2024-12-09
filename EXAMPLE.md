@@ -63,14 +63,14 @@ int main() {
 To compile the C code, run the following command:
 
 ```bash
-$ gcc EXAMPLE.c -o EXAMPLE
+$ gcc EXAMPLE.c -fno-pie -no-pie -O0 -o EXAMPLE
 ```
 
 To lift the compiled binary, run the following command:
 
 ```bash
 $ ./_build/default/ocaml-core/src/tool/wrapper.exe EXAMPLE
-$ ./_build/default/ocaml-core/src/tool/lifter.exe EXAMPLE.elf_ext
+$ ./_build/default/ocaml-core/src/tool/decompiler.exe EXAMPLE.elf_ext
 ```
 
 To interpret the lifted binary, run the following command:
@@ -83,5 +83,5 @@ $ ./_build/default/ocaml-core/src/tool/interpreter.exe EXAMPLE.fgir_dump
 To print the lifted binary in Dafny format, run the following command:
 
 ```bash
-$ ./_build/default/ocaml-core/src/tool/dafny_printer.exe EXAMPLE.ioir_dump
+$ ./_build/default/ocaml-core/src/tool/dafnyprinter.exe EXAMPLE.ioir_dump
 ```
