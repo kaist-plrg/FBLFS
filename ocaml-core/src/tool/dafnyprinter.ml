@@ -17,22 +17,6 @@ let speclist =
       ": add log feature" );
   ]
 
-let create_graph_per_func (f : IOIR.Syn.Func.t) : SIOIR.Func.t =
-  let g = SIOIR.Translate.translate_func f in
-  { nameo = f.nameo; entry = f.entry; body = g; attr = f.attr }
-
-let create_dafny (p : IOIR.Syn.Prog.t) : SIOIR.Prog.t =
-  {
-    sp_num = p.sp_num;
-    fp_num = p.fp_num;
-    funcs =
-      List.map (fun (f : IOIR.Syn.Func.t) -> create_graph_per_func f) p.funcs;
-    rom = p.rom;
-    rspec = p.rspec;
-    externs = p.externs;
-    objects = p.objects;
-  }
-
 let pp_dict (pp_k : Format.formatter -> 'a -> unit)
     (pp_v : Format.formatter -> 'b -> unit) (fmt : Format.formatter)
     (d : ('a * 'b) List.t) : unit =
@@ -76,7 +60,7 @@ let main () =
     let data = Artifact.Loader.load !ifile in
     let dafny =
       match data with
-      | Artifact.Data.L3 l3 -> create_dafny l3
+      | Artifact.Data.L3 l3 -> SIOIR.Translate.translate_prog l3
       | _ -> failwith "Unsupported artifact"
     in
     let ifile_base = Filename.basename !ifile |> Filename.remove_extension in

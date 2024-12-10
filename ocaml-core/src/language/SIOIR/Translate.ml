@@ -71,7 +71,7 @@ let translate_block (b : IOIR.Syn.Block.t) : (JLabel.t * Node.t) List.t =
       [ (addr_stmts, translate_stmts b.body [ translate_tailcall c ] None) ]
   | JR r -> [ (addr_stmts, translate_stmts b.body [ translate_ret r ] None) ]
 
-let translate_func (f : IOIR.Syn.Func.t) : Stmt.t =
+let translate_func_to_stmt (f : IOIR.Syn.Func.t) : Stmt.t =
   [%log debug "Translating function %a" (Option.pp String.pp) f.nameo];
   let init : Graph.t =
     {
@@ -83,3 +83,19 @@ let translate_func (f : IOIR.Syn.Func.t) : Stmt.t =
   in
   Restructure.restruct init |> Restructure.reduce_dag_target
   |> Restructure.remove_out |> Restructure.remove_dag |> Restructure.to_stmt
+
+let translate_func (f : IOIR.Syn.Func.t) : Func.t =
+  let g = translate_func_to_stmt f in
+  { nameo = f.nameo; entry = f.entry; body = g; attr = f.attr }
+
+let translate_prog (p : IOIR.Syn.Prog.t) : Prog.t =
+  let p = IOIR.DAE.remove_dead_assignments p in
+  {
+    sp_num = p.sp_num;
+    fp_num = p.fp_num;
+    funcs = List.map (fun (f : IOIR.Syn.Func.t) -> translate_func f) p.funcs;
+    rom = p.rom;
+    rspec = p.rspec;
+    externs = p.externs;
+    objects = p.objects;
+  }
