@@ -89,7 +89,9 @@ let translate_func (f : IOIR.Syn.Func.t) : Func.t =
   { nameo = f.nameo; entry = f.entry; body = g; attr = f.attr }
 
 let translate_prog (p : IOIR.Syn.Prog.t) : Prog.t =
-  let p = IOIR.DAE.remove_dead_assignments p in
+  let p =
+    p |> IOIR.DAE.translate_prog |> IOIR.DuplicateSLoadRemove.translate_prog
+  in
   {
     sp_num = p.sp_num;
     fp_num = p.fp_num;

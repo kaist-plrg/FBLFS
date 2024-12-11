@@ -2,13 +2,9 @@ open Common
 open Syn
 module ICFG = Liveness.ICFG
 
-let remove_dead_assignments_func (f : Func.t) : Func.t =
+let translate_func (f : Func.t) : Func.t =
   let g = ICFG.to_graph f.blocks in
-  let live_vars =
-    Liveness.LivenessAnalysis.analyze
-      (fun x -> Liveness.LivenessAnalysisDomain.bottom)
-      g
-  in
+  let live_vars = Liveness.LivenessAnalysis.analyze (fun x -> None) g in
 
   (* Filter out dead assignments *)
   let filter_dead_inst (inst : Inst.t) live_after =
@@ -23,7 +19,7 @@ let remove_dead_assignments_func (f : Func.t) : Func.t =
   let new_blocks =
     List.map
       (fun block ->
-        let live_at_end = live_vars { block; time = Pre } in
+        let live_at_end = live_vars { block; time = Post } in
         let body =
           match live_at_end with
           | None -> block.body
@@ -38,6 +34,6 @@ let remove_dead_assignments_func (f : Func.t) : Func.t =
 
   { f with blocks = new_blocks }
 
-let remove_dead_assignments (p : Prog.t) : Prog.t =
+let translate_prog (p : Prog.t) : Prog.t =
   let funcs = Prog.funcs p in
-  { p with funcs = List.map remove_dead_assignments_func funcs }
+  { p with funcs = List.map translate_func funcs }
