@@ -61,7 +61,7 @@ let print_dafny_regid fmt (r : Common.RegId.t) : Unit.t =
 let print_dafny_varnode fmt (v : Common.NumericVarNode.t) : Unit.t =
   match v with
   | Register r -> print_dafny_regid fmt r.id
-  | Const i -> Format.fprintf fmt "Const(%Ld, %ld)" i.value i.width
+  | Const i -> Format.fprintf fmt "Value.Const(%Ld, %ld)" i.value i.width
   | Ram (i, w) -> Format.fprintf fmt "unhandled_ram_%ld" w
 
 let print_dafny_assignment fmt (a : IOIR.Syn.IAssignment.t) : Unit.t =
@@ -71,10 +71,11 @@ let print_dafny_assignment fmt (a : IOIR.Syn.IAssignment.t) : Unit.t =
       print_dafny_varnode fmt v;
       Format.fprintf fmt ";"
   | Auop (op, v) ->
-      Format.fprintf fmt "%s(%a);" (Common.Uop.show op) print_dafny_varnode v
+      Format.fprintf fmt "Value.%s(%a,%ld);" (Common.Uop.show op)
+        print_dafny_varnode v a.output.width
   | Abop (op, v1, v2) ->
-      Format.fprintf fmt "%s(%a,%a);" (Common.Bop.show op) print_dafny_varnode
-        v1 print_dafny_varnode v2
+      Format.fprintf fmt "Value.%s(%a,%a,%ld);" (Common.Bop.show op)
+        print_dafny_varnode v1 print_dafny_varnode v2 a.output.width
 
 let print_dafny_sloadstore fmt (ls : IOIR.Syn.ISLoadStore.t) : Unit.t =
   match ls with
@@ -84,6 +85,18 @@ let print_dafny_sloadstore fmt (ls : IOIR.Syn.ISLoadStore.t) : Unit.t =
   | Sstore { offset; value } ->
       Format.fprintf fmt "mem := Memory.AssignStack(mem, %Ld, %a, %ld);" offset
         print_dafny_varnode value
+        (Common.NumericVarNode.get_width value)
+
+let print_dafny_loadstore fmt (ls : IOIR.Syn.ILoadStore.t) : Unit.t =
+  match ls with
+  | Load { output; pointer; space } ->
+      Format.fprintf fmt "%a := Memory.Load(mem, %a, %a, %ld);"
+        print_dafny_regid output.id print_dafny_varnode pointer
+        print_dafny_varnode space output.width
+  | Store { pointer; value; space } ->
+      Format.fprintf fmt "mem := Memory.Store(mem, %a, %a, %a,%ld);"
+        print_dafny_varnode pointer print_dafny_varnode value
+        print_dafny_varnode space
         (Common.NumericVarNode.get_width value)
 
 let print_dafny_return fmt (r : IRet.t) : Unit.t = Format.fprintf fmt "return;"
@@ -116,12 +129,13 @@ let rec print_dafny_stmt fmt (s : Stmt.t) : Unit.t =
              Format.fprintf fmt "case %Ld => %a" idx print_dafny_stmt stmt))
         cases
   | IfElse (cond, t, f) ->
-      Format.fprintf fmt "@[<v 1>if Uop.IsNonZero(%a) {@;%a@;} else {@;%a@;}@]"
+      Format.fprintf fmt
+        "@[<v 1>if Value.IsNonZero(%a) {@;%a@;} else {@;%a@;}@]"
         print_dafny_varnode cond print_dafny_stmt t print_dafny_stmt f
   | Call c -> ICall.pp fmt c
   | TailCall c -> ITailCall.pp fmt c
   | Ret r -> print_dafny_return fmt r
-  | LoadStore ls -> IOIR.Syn.ILoadStore.pp fmt ls
+  | LoadStore ls -> print_dafny_loadstore fmt ls
   | SLoadStore ls -> print_dafny_sloadstore fmt ls
   | Assignment a -> print_dafny_assignment fmt a
   | Special s -> IOIR.Syn.ISpecial.pp fmt s
@@ -141,20 +155,29 @@ let print_dafny_decl_set fmt (d : Common.RegIdSet.t) : Unit.t =
          print_dafny_decl)
       (Common.RegIdSet.elements d)
 
-let print_dafny_copy_input fmt (inputs : Common.RegId.t List.t) : Unit.t =
+let print_dafny_copy_input fmt (inputs : Common.RegIdSet.t) : Unit.t =
   Format.fprintf fmt "%a@;"
     (Format.pp_print_list
        ~pp_sep:(fun fmt _ -> Format.fprintf fmt "@;")
        (fun fmt r ->
          Format.fprintf fmt "%a := %a_i;" print_dafny_regid r print_dafny_regid
            r))
-    inputs
+    (inputs |> Common.RegIdSet.elements)
+
+let print_dafny_assign_undef fmt (undefs : Common.RegIdSet.t) : Unit.t =
+  Format.fprintf fmt "%a@;"
+    (Format.pp_print_list
+       ~pp_sep:(fun fmt _ -> Format.fprintf fmt "@;")
+       (fun fmt r ->
+         Format.fprintf fmt "%a := Value.Undefined(1);" print_dafny_regid r))
+    (undefs |> Common.RegIdSet.elements)
 
 let print_dafny_func fmt (f : Func.t) : unit =
   let inputSet = Common.RegIdSet.of_list f.attr.inputs in
+  let defSet = f.body |> Stmt.collect_defs in
   let outputSet = Common.RegIdSet.of_list f.attr.outputs in
   Format.fprintf fmt
-    "@[<v 1>method %s(%a) returns (%a) {@;%a@;%a@;mem := mem_i;@;%a@;}@]"
+    "@[<v 1>method %s(%a) returns (%a) {@;%a@;%a@;%a@;mem := mem_i;@;%a@;}@]"
     (f.nameo
     |> Option.value ~default:(f.entry |> Common.Loc.get_addr |> Int64.show))
     (Format.pp_print_list
@@ -170,7 +193,7 @@ let print_dafny_func fmt (f : Func.t) : unit =
     @ (f.attr.outputs
       |> List.map (fun r -> Format.asprintf "%a" print_dafny_decl r)))
     print_dafny_decl_set
-    ( f.body |> Stmt.collect_defs |> fun x ->
-      Common.RegIdSet.union x inputSet |> fun x ->
-      Common.RegIdSet.diff x outputSet )
-    print_dafny_copy_input f.attr.inputs print_dafny_stmt f.body
+    (Common.RegIdSet.diff (Common.RegIdSet.union defSet inputSet) outputSet)
+    print_dafny_copy_input inputSet print_dafny_assign_undef
+    (Common.RegIdSet.diff (Common.RegIdSet.union defSet outputSet) inputSet)
+    print_dafny_stmt f.body

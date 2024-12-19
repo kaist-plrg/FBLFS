@@ -65,6 +65,6 @@ let main () =
     in
     let ifile_base = Filename.basename !ifile |> Filename.remove_extension in
     let ifile_path = Filename.dirname !ifile in
-    print_dafny dafny (Filename.concat ifile_path (ifile_base ^ ".dafny"))
+    print_dafny dafny (Filename.concat ifile_path (ifile_base ^ ".dfy"))
 
 let () = Global.run_main main

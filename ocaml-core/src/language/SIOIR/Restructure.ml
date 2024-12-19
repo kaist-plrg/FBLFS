@@ -4,8 +4,16 @@ let restruct (g : Graph.t) : Graph.t =
     [%log debug "Restructuring level %d with %d nodes" level nlen];
     let g' = Graph.interval_graph g level in
     if Graph.node_num g' = nlen then
-      if nlen = 1 then g else (* node duplication *)
-                           failwith "not implemented"
+      if nlen = 1 then g
+      else (
+        (* node duplication *)
+        [%log info "Translation failed"];
+        Graph.of_list
+          [
+            ( JLabel.Abs { level; id = 0 },
+              Node.StmtN
+                { stmts = [ Stmt.Special "translationfailed" ]; next = None } );
+          ])
     else aux g' (level + 1)
   in
   aux g 0
