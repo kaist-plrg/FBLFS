@@ -42,10 +42,7 @@ let pp_int64 (fmt : Format.formatter) (i : Int64.t) : unit =
 let print_dafny (dafny : SIOIR.Prog.t) (path : String.t) : Unit.t =
   let oc = open_out path in
   let fmt = Format.formatter_of_out_channel oc in
-  Format.fprintf fmt "%a@.%!"
-    (Format.pp_print_list ~pp_sep:Format.pp_print_space
-       SIOIR.DafnyPrinter.print_dafny_func)
-    dafny.funcs;
+  Format.fprintf fmt "%a@.%!" SIOIR.DafnyPrinter.print_dafny_prog dafny;
   close_out oc
 
 let main () =
